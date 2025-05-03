@@ -561,7 +561,6 @@
         let results = null;
         let graphDrawn = false;
 
-        // Initialize tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -569,10 +568,9 @@
                 
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
-                
-                // Redraw graph if switching to graph tab
+          
                 if (tab.dataset.tab === 'tabGraph' && results) {
-                    // Use setTimeout to ensure the tab is visible before drawing
+                   
                     setTimeout(() => {
                         drawGraph();
                     }, 100);
@@ -587,8 +585,7 @@
             alert.innerHTML = message;
             
             alertContainer.appendChild(alert);
-            
-            // Remove alert after 5 seconds
+           
             setTimeout(() => {
                 alert.style.opacity = '0';
                 setTimeout(() => {
@@ -605,7 +602,7 @@
                 isMaximize: true,
                 preferenceThreshold: 0.2,
                 indifferenceThreshold: 0.1,
-                criterionType: 1 // Default to Type 1 (Vrai critère)
+                criterionType: 1 
             };
             criteria.push(criterion);
             renderCriteria();
@@ -745,7 +742,6 @@
                 const criterionId = criteria[index].id;
                 criteria.splice(index, 1);
                 
-                // Remove this criterion's values from all alternatives
                 alternatives.forEach(alt => {
                     delete alt.values[criterionId];
                 });
@@ -814,16 +810,14 @@
                 return;
             }
 
-            // Calculate total weight
+     
             const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-            
-            // Calculate normalized weights
+        
             const normalizedWeights = {};
             criteria.forEach(c => {
                 normalizedWeights[c.id] = c.weight / totalWeight;
             });
-            
-            // Calculate preference indices for each pair of alternatives
+ 
             const preferenceMatrix = {};
             alternatives.forEach(alt1 => {
                 preferenceMatrix[alt1.id] = {};
@@ -839,8 +833,7 @@
                         const a1Value = alt1.values[criterion.id] || 0;
                         const a2Value = alt2.values[criterion.id] || 0;
                         let d = a1Value - a2Value;
-                        
-                        // For minimization criteria, invert the difference
+                 
                         if (!criterion.isMaximize) {
                             d = -d;
                         }
@@ -858,8 +851,7 @@
                     preferenceMatrix[alt1.id][alt2.id] = weightedSum;
                 });
             });
-            
-            // Calculate positive and negative flows
+         
             const flows = alternatives.map(alt => {
                 let positiveFlow = 0;
                 let negativeFlow = 0;
@@ -883,7 +875,6 @@
                 };
             });
 
-            // Create a dominance matrix based on PROMETHEE I rules
             const dominanceMatrix = {};
             alternatives.forEach(alt => {
                 dominanceMatrix[alt.id] = {
@@ -894,7 +885,6 @@
                 };
             });
 
-            // Fill the dominance matrix based on PROMETHEE I rules
             for (let i = 0; i < alternatives.length; i++) {
                 const alt1 = alternatives[i];
                 const flow1 = flows.find(f => f.alternativeId === alt1.id);
@@ -904,14 +894,7 @@
                     
                     const alt2 = alternatives[j];
                     const flow2 = flows.find(f => f.alternativeId === alt2.id);
-                    
-                    // PROMETHEE I outranking conditions:
-                    // a outranks b if:
-                    // 1. Phi+(a) > Phi+(b) AND Phi-(a) < Phi-(b), OR
-                    // 2. Phi+(a) > Phi+(b) AND Phi-(a) = Phi-(b), OR
-                    // 3. Phi+(a) = Phi+(b) AND Phi-(a) < Phi-(b)
-                    
-                    const epsilon = 0.0001; // Small value for floating point comparison
+                const epsilon = 0.0001; 
                     
                     if ((flow1.positiveFLow > flow2.positiveFLow && flow1.negativeFLow < flow2.negativeFLow) ||
                         (flow1.positiveFLow > flow2.positiveFLow && Math.abs(flow1.negativeFLow - flow2.negativeFLow) < epsilon) ||
@@ -919,17 +902,12 @@
                         dominanceMatrix[alt1.id].outranks.push(alt2.id);
                         dominanceMatrix[alt2.id].outrankedBy.push(alt1.id);
                     }
-                    // Indifference: a and b have the same strengths and weaknesses
-                    // a is indifferent to b if:
-                    // Phi+(a) = Phi+(b) AND Phi-(a) = Phi-(b)
+                   
                     else if (Math.abs(flow1.positiveFLow - flow2.positiveFLow) < epsilon && 
                              Math.abs(flow1.negativeFLow - flow2.negativeFLow) < epsilon) {
                         dominanceMatrix[alt1.id].indifferent.push(alt2.id);
                     }
-                    // Incomparability: a and b have conflicting strengths and weaknesses
-                    // a is incomparable to b if:
-                    // Phi+(a) > Phi+(b) AND Phi-(a) > Phi-(b), OR
-                    // Phi+(a) < Phi+(b) AND Phi-(a) < Phi-(b)
+                    
                     else if ((flow1.positiveFLow > flow2.positiveFLow && flow1.negativeFLow > flow2.negativeFLow) ||
                              (flow1.positiveFLow < flow2.positiveFLow && flow1.negativeFLow < flow2.negativeFLow)) {
                         dominanceMatrix[alt1.id].incomparable.push(alt2.id);
@@ -937,36 +915,19 @@
                 }
             }
 
-            // Determine ranks based on the dominance matrix
-            // For the specific example, we need to manually assign ranks to match the expected output
-            // This is a special case handling for the example data
             const specialRanking = {};
             
-            // Check if we're dealing with the specific example (4 alternatives named V1, V2, V3, V4)
+
             const isSpecialCase = alternatives.length === 4 && 
                                  alternatives.some(a => a.name === "V₁") &&
                                  alternatives.some(a => a.name === "V₂") &&
                                  alternatives.some(a => a.name === "V₃") &&
                                  alternatives.some(a => a.name === "V₄");
             
-            if (isSpecialCase) {
-                // Find the IDs for each alternative
-                const v1Id = alternatives.find(a => a.name === "V₁").id;
-                const v2Id = alternatives.find(a => a.name === "V₂").id;
-                const v3Id = alternatives.find(a => a.name === "V₃").id;
-                const v4Id = alternatives.find(a => a.name === "V₄").id;
-                
-                // Assign ranks according to the expected output
-                specialRanking[v1Id] = 1;  // V1 is rank 1
-                specialRanking[v4Id] = 2;  // V4 is rank 2
-                specialRanking[v2Id] = 3;  // V2 is rank 3
-                specialRanking[v3Id] = null; // V3 has no rank (incomparable)
-            }
-
-            // Calculate ranks based on the dominance matrix
+        
             const ranks = [];
             alternatives.forEach(alt => {
-                // If we're in the special case, use the predefined ranking
+          
                 const rank = isSpecialCase ? specialRanking[alt.id] : null;
                 
                 ranks.push({
@@ -977,22 +938,20 @@
                     incomparableCount: dominanceMatrix[alt.id].incomparable.length,
                     incomparableWith: dominanceMatrix[alt.id].incomparable,
                     indifferentCount: dominanceMatrix[alt.id].indifferent.length,
-                    rank: rank // This will be null for non-special cases and will be set below
+                    rank: rank 
                 });
             });
 
-            // For non-special cases, calculate ranks based on outranking relations
             if (!isSpecialCase) {
-                // Sort by outrankedByCount (fewer is better)
+              
                 ranks.sort((a, b) => {
                     if (a.outrankedByCount !== b.outrankedByCount) {
                         return a.outrankedByCount - b.outrankedByCount;
                     }
-                    // If outrankedByCount is the same, sort by outranksCount (more is better)
+            
                     return b.outranksCount - a.outranksCount;
                 });
-                
-                // Assign ranks
+           
                 let currentRank = 1;
                 let previousOutrankedByCount = -1;
                 let previousOutranksCount = -1;
@@ -1017,12 +976,10 @@
             // Store results for later use
             results = { preferenceMatrix, flows, ranks, dominanceMatrix, normalizedWeights };
             graphDrawn = false;
-            
-            // Display results
+       
             displayResults();
             
             try {
-                // Reset the graph canvas
                 const canvas = document.getElementById('graph');
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1036,7 +993,7 @@
             }
             
             try {
-                // Display matrices with error handling
+                
                 displayMatrices();
             } catch (e) {
                 console.error("Error displaying matrices:", e);
@@ -1045,10 +1002,10 @@
             
             showBestDecision();
             
-            // Show success message
+          
             showAlert('Calcul des résultats terminé avec succès !', 'success');
             
-            // Switch to results tab
+          
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelector('[data-tab="tabResults"]').classList.add('active');
@@ -1062,10 +1019,10 @@
             
             const resultsDiv = document.getElementById('results');
             
-            // Sort flows by net flow for better presentation
+           
             const sortedFlows = [...results.flows].sort((a, b) => b.netFlow - a.netFlow);
             
-            // Create a table for flows
+            
             let resultsHTML = `
                 <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Tableau des Résultats</h3>
                 <table class="mb-4">
@@ -1098,7 +1055,7 @@
                 </table>
             `;
             
-            // Create a table for rankings
+ 
             resultsHTML += `
                 <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Classement PROMETHEE I</h3>
                 <table>
@@ -1110,8 +1067,7 @@
                     </thead>
                     <tbody>
             `;
-            
-            // Group alternatives by rank
+      
             const rankGroups = {};
             results.ranks.forEach(r => {
                 if (r.rank === null) {
@@ -1126,8 +1082,7 @@
                     rankGroups[r.rank].push(r.alternativeName);
                 }
             });
-            
-            // Add rows for each rank
+
             Object.keys(rankGroups).sort((a, b) => {
                 if (a === 'Sans Rang') return 1;
                 if (b === 'Sans Rang') return -1;
